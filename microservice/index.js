@@ -16,13 +16,31 @@ app.get('/hb', (req, res) => {
 	res.end();
 });
 
+app.get('/forceRegister', (req, res) => {
+	registerToGateway(
+		function onSuccess() {
+			res.writeHead(200, {'Content-Type': 'text/plain'});
+		},
+		function onError() {
+			res.writeHead(500, {'Content-Type': 'text/plain'});
+		})
+	.then(() => res.end());//res.send('Hello World!');)
+});
+
 app.listen(SERVER_PORT, SERVER_HOST, () => {
 	console.log(`Microservice listening at http://${SERVER_HOST}:${SERVER_PORT}`);
-	axios.get("http://" + GATEWAY_HOST + ":" + GATEWAY_PORT + "/register")
-		.then((res) => console.log(`Registered to gateway http://${GATEWAY_HOST}:${GATEWAY_PORT}`))
+	registerToGateway();
+});
+
+function registerToGateway(cbSuccess, cbError) {
+	return axios.get("http://" + GATEWAY_HOST + ":" + GATEWAY_PORT + "/register")
+		.then((res) => {
+			console.log(`Registered to gateway http://${GATEWAY_HOST}:${GATEWAY_PORT}`);
+			cbSuccess && cbSuccess();
+		})
 		.catch((err) => {
 			console.log(`Error while registering to gateway: ${err.code} - ${err.address}`);
+			cbError && cbError();
 			process.exit(1);
 		});
-	
-});
+}
